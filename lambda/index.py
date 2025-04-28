@@ -6,7 +6,7 @@ import urllib.request
 import urllib.error
 
 # 呼び出すFastAPIサーバーのエンドポイントURL
-API_ENDPOINT = "https://c55f-35-233-204-253.ngrok-free.app"
+API_ENDPOINT = "https://c55f-35-233-204-253.ngrok-free.app/generate"
 
 
 # Lambda コンテキストからリージョンを抽出する関数
