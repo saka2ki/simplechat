@@ -6,14 +6,10 @@ import os
 import nest_asyncio
 from pyngrok import ngrok
 
-nest_asyncio.apply()
-ngrok_token = os.environ.get("NGROK_TOKEN")
-if not ngrok_token: print("Ngrok認証トークンが'NGROK_TOKEN'環境変数に設定されていません。")
-ngrok.set_auth_token(ngrok_token)
-tunnels = ngrok.get_tunnels()
 
 # 呼び出すFastAPIサーバーのエンドポイントURL
-API_ENDPOINT = tunnels[0].public_url + "/generate"
+NGROK_URL = "https://ec7e-35-233-204-253.ngrok-free.app/"
+API_ENDPOINT = NGROK_URL + "/generate"
 
 
 # Lambda コンテキストからリージョンを抽出する関数
