@@ -1,12 +1,19 @@
-# lambda/index.py
 import json
-import os
 import re
 import urllib.request
 import urllib.error
+import os
+import nest_asyncio
+from pyngrok import ngrok
+
+nest_asyncio.apply()
+ngrok_token = os.environ.get("NGROK_TOKEN")
+if not ngrok_token: print("Ngrok認証トークンが'NGROK_TOKEN'環境変数に設定されていません。")
+ngrok.set_auth_token(ngrok_token)
+tunnels = ngrok.get_tunnels()
 
 # 呼び出すFastAPIサーバーのエンドポイントURL
-API_ENDPOINT = "https://c55f-35-233-204-253.ngrok-free.app/generate"
+API_ENDPOINT = tunnels[0].public_url + "/generate"
 
 
 # Lambda コンテキストからリージョンを抽出する関数
@@ -43,14 +50,25 @@ def lambda_handler(event, context):
             "content": message
         })
 
+        prompts = ""
+        for msg in messages:
+            if msg["role"] == "user":
+                prompts += f"User: {msg['content']}\n"
+            elif msg["role"] == "assistant":
+                prompts += f"Assistant: {msg['content']}\n"
+
+        if messages[-1]["role"] == "user":
+            prompts += "Assistant: "
+        elif messages[-1]["role"] == "assistant":
+            prompts += "User: "
+
         # FastAPIに送信するペイロードを作成
         request_payload = {
-            "messages": messages,
-            "config": {
-                "max_tokens": 512,
-                "temperature": 0.7,
-                "top_p": 0.9
-            }
+            "prompt": prompts,
+            "max_new_tokens": 512,
+            "do_sample": True,
+            "temperature": 0.7,
+            "top_p": 0.9
         }
 
         # リクエストデータをエンコード
@@ -74,10 +92,10 @@ def lambda_handler(event, context):
         print("FastAPI response:", json.dumps(fastapi_response, default=str))
 
         # FastAPIの応答検証
-        if not fastapi_response.get('response'):
+        if not fastapi_response.get('generated_text'):
             raise Exception("No response content from FastAPI")
 
-        assistant_response = fastapi_response['response']
+        assistant_response = fastapi_response['generated_text']
 
         # アシスタント応答を会話履歴に追加
         messages.append({
